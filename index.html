@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>🎀 Leave Tracker 🎀</title>
+
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #fff0f5;
+  padding: 20px;
+}
+
+h2 {
+  text-align: center;
+  color: #ff69b4;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 16px;
+  margin-top: 12px;
+  box-shadow: 0 4px 10px rgba(255,182,193,0.3);
+}
+
+label {
+  font-size: 14px;
+  color: #ff69b4;
+}
+
+select, input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  border-radius: 12px;
+  border: 1px solid #ffd1dc;
+  background: #fffafd;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.btn-add {
+  background: linear-gradient(45deg, #ff9a9e, #fecfef);
+}
+
+.btn-reset {
+  background: linear-gradient(45deg,#ffd6e0,#ffe4f0);
+  color:#ff69b4;
+}
+
+.summary p {
+  font-size: 15px;
+  margin: 6px 0;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>🎀 Leave Tracker 🎀</h2>
+
+<div class="card">
+
+<label>ประเภทการลา</label>
+<select id="type">
+  <option>พักร้อน</option>
+  <option>ลาป่วย</option>
+  <option>ลากิจ</option>
+  <option>Compensated</option>
+</select>
+
+<label>เวลาเข้า (มาบ่าย)</label>
+<input type="time" id="inTime">
+
+<label>เวลาออก (กลับก่อนเลิก)</label>
+<input type="time" id="outTime">
+
+<button class="btn-add" onclick="addLeave()">💖 เพิ่มรายการ 💖</button>
+
+<button class="btn-reset" onclick="resetData()">🎀 Reset ข้อมูล 🎀</button>
+
+</div>
+
+<div class="card summary">
+<h3>✨ Summary ✨</h3>
+<p>🌸 พักร้อน: <span id="vacation">0</span></p>
+<p>🩺 ลาป่วย: <span id="sick">0</span></p>
+<p>👜 ลากิจ: <span id="personal">0</span></p>
+<p>🎁 Compensated: <span id="comp">0</span></p>
+</div>
+
+<script>
+
+// ✅ ป้องกัน iOS bug
+function toMin(t){
+  if(!t || t.indexOf(":") === -1) return 0;
+  let p = t.split(":");
+  return (parseInt(p[0])||0)*60 + (parseInt(p[1])||0);
+}
+
+// ✅ format เวลา
+function format(mins){
+  let h = Math.floor(mins/60);
+  let m = mins%60;
+  return h+" ชม "+m+" นาที";
+}
+
+// ✅ คำนวณเวลา
+function calc(inTime, outTime){
+
+  let start = 510;  // 08:30
+  let end = 1075;   // 17:55
+  let lunchS = 720;
+  let lunchE = 780;
+
+  let leave = 0;
+
+  if(inTime){
+    let t = toMin(inTime);
+    leave = t - start;
+    if(t > lunchS){
+      leave -= Math.min(t,lunchE) - lunchS;
+    }
+  }
+
+  if(outTime){
+    let t = toMin(outTime);
+    leave = end - t;
+    if(t < lunchE){
+      leave -= lunchE - Math.max(t,lunchS);
+    }
+  }
+
+  return Math.max(0, leave);
+}
+
+let data = [];
+
+// ✅ เพิ่มรายการ
+function addLeave(){
+
+  let type = document.getElementById("type").value;
+  let inTime = document.getElementById("inTime").value;
+  let outTime = document.getElementById("outTime").value;
+
+  if(!inTime && !outTime){
+    alert("ใส่เวลาอย่างใดอย่างหนึ่งนะ 💕");
+    return;
+  }
+
+  let mins = calc(inTime,outTime);
+
+  data.push({type, mins});
+
+  update();
+}
+
+// ✅ อัปเดต Summary
+function update(){
+
+  let vacation=0, sick=0, personal=0, comp=0;
+  let dayMin = 505;
+
+  data.forEach(d=>{
+    if(d.type==="พักร้อน") vacation+=d.mins;
+    if(d.type==="ลาป่วย") sick+=d.mins/dayMin;
+    if(d.type==="ลากิจ") personal+=d.mins/dayMin;
+    if(d.type==="Compensated") comp+=d.mins;
+  });
+
+  document.getElementById("vacation").innerText = format(vacation);
+  document.getElementById("comp").innerText = format(comp);
+  document.getElementById("sick").innerText = sick.toFixed(2)+" วัน";
+  document.getElementById("personal").innerText = personal.toFixed(2)+" วัน";
+}
+
+// ✅ รีเซ็ต
+function resetData(){
+
+  if(!confirm("รีเซ็ตข้อมูลทั้งหมดใช่ไหม? 🥺")) return;
+
+  data = [];
+
+  document.getElementById("inTime").value = "";
+  document.getElementById("outTime").value = "";
+
+  document.getElementById("vacation").innerText = "0";
+  document.getElementById("sick").innerText = "0";
+  document.getElementById("personal").innerText = "0";
+  document.getElementById("comp").innerText = "0";
+}
+
+</script>
+
+</body>
+</html>
